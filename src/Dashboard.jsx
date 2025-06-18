@@ -25,6 +25,9 @@ const Dashboard = ({ user }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [selectedClient, setSelectedClient] = useState(null);
   const [loadingRemise, setLoadingRemise] = useState(false);
+  
+  const [adminMontant, setAdminMontant] = useState('');
+  const [addingMontant, setAddingMontant] = useState(false);
 
   const isAdmin = user?.email === 'admin@admin.com';
 
@@ -35,7 +38,7 @@ const Dashboard = ({ user }) => {
     : 'Utilisateur';
 
   const calcPoints = montant => Math.floor(montant / 100);
-  const calcRemise = points => Math.round((points * 1.3) / 10) * 10;
+  const calcRemise = points => Math.round((points * 2.7) / 10) * 10;
 
   const handleAddOrder = async () => {
     if (!amount || isNaN(amount)) return;
@@ -185,6 +188,34 @@ const Dashboard = ({ user }) => {
     setSearchResults([]);
     setLoadingRemise(false);
   };
+  
+  // Fonction pour ajouter une commande à un client
+  const handleAddMontantToClient = async () => {
+  if (!selectedClient || isNaN(adminMontant) || !adminMontant) return;
+
+  setAddingMontant(true);
+
+  const montantInt = Math.floor(parseFloat(adminMontant));
+  const points = calcPoints(montantInt);
+  const remise = calcRemise(points);
+
+  await addDoc(collection(db, 'orders'), {
+    userId: selectedClient.userId,
+    userEmail: '', // si tu veux, tu peux stocker l'email du client ici
+    amount: montantInt,
+    points,
+    remise,
+    createdAt: Timestamp.now(),
+  });
+
+  setAdminMontant('');
+  await handleSelectClient(selectedClient.userId);
+  await fetchOrders();
+
+  setAddingMontant(false);
+};
+
+  
 
   const logout = () => signOut(auth);
 
@@ -289,6 +320,25 @@ const Dashboard = ({ user }) => {
           >
             {loadingRemise ? 'Traitement...' : 'Utiliser la remise'}
           </button>
+		  
+<div style={{ marginBottom: 10 }}>
+  <input
+    type="number"
+    placeholder="Ajouter un montant"
+    value={adminMontant}
+    onChange={e => setAdminMontant(e.target.value)}
+    style={styles.input}
+  />
+  <button
+    onClick={handleAddMontantToClient}
+    disabled={addingMontant}
+    style={{ ...styles.button, backgroundColor: '#227B33', marginTop: 5 }}
+  >
+    {addingMontant ? 'Ajout en cours...' : 'Ajouter ce montant'}
+  </button>
+</div>
+
+		  
           <button
             onClick={() => setSelectedClient(null)}
             style={{ ...styles.button, backgroundColor: '#999' }}
@@ -300,22 +350,11 @@ const Dashboard = ({ user }) => {
 
       {!isAdmin && (
         <div style={styles.box}>
-          <h3 style={styles.subtitle}>Ajouter une commande</h3>
-          <input
-            type="number"
-            placeholder="Montant en DA"
-            value={amount}
-            onChange={e => setAmount(e.target.value)}
-            style={styles.input}
-          />
-          <button onClick={handleAddOrder} style={styles.button} disabled={loading}>
-            {loading ? 'Envoi...' : 'Ajouter'}
-          </button>
-
+          <h3 style={styles.subtitle}>Mes Points NADSA</h3>
           <div style={styles.stats}>
-            <p><strong>Total aujourd'hui :</strong> {totalToday} DA</p>
-            <p><strong>Points cumulés :</strong> {totalPoints} pts</p>
-            <p><strong>Remise obtenue :</strong> {totalRemise} DA</p>
+            <p><strong>Mon Total aujourd'hui :</strong> {totalToday} DA</p>
+            <p><strong>Mes Points cumulés :</strong> {totalPoints} pts</p>
+            <p><strong>Ma Remise obtenue :</strong> {totalRemise} DA</p>
           </div>
         </div>
       )}
