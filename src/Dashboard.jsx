@@ -38,7 +38,7 @@ const Dashboard = ({ user }) => {
     : 'Utilisateur';
 
   const calcPoints = montant => Math.floor(montant / 100);
-  const calcRemise = points => Math.round((points * 2.7) / 10) * 10;
+  const calcRemise = points => Math.round((points * 1.5) / 10) * 10;
 
   const handleAddOrder = async () => {
     if (!amount || isNaN(amount)) return;
